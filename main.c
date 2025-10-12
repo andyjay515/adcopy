@@ -1,5 +1,4 @@
 #include <stdio.h>
-//#include <string.h>
 #include <c64/kernalio.h>
 #include <c64/keyboard.h>
 
@@ -316,7 +315,7 @@ int main(void)
 
     putchar(14);
     // welcome message
-    putsxy(10,5,p"MOS Disk Copy");
+    putsxy(10,5,p"Another Disk Copy");
     putsxy(10,23,p"Andy Jay 202510");
     keyb_poll();
 

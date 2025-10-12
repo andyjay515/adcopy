@@ -1,6 +1,2 @@
 #!/bin/bash
-#mos-c64-clang main.c -o program.prg
-#mos-c128-clang -D__C128__ render.c vsync.c main.c -o program128.prg
-#cl65 -t c64 main.c -o program.prg
-#cl65 -t c128 -Os render.c vsync.c main.c -o program128.prg
-oscar64 -O2 -o=program.prg main.c
+oscar64 -O2 -o=adcopy.prg main.c
