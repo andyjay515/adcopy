@@ -17,10 +17,10 @@ char cmd[32];
 
 /* CIA registry address */
 #define CIA1_REG 0xDC00
-volatile char* CIA1_TODT = (char*)(CIA1_REG+0x08);
-volatile char* CIA1_TODS = (char*)(CIA1_REG+0x09);
-volatile char* CIA1_TODM = (char*)(CIA1_REG+0x0A);
-volatile char* CIA1_TODH = (char*)(CIA1_REG+0x0B);
+unsigned char* CIA1_TODT = (unsigned char*)(CIA1_REG+0x08);
+unsigned char* CIA1_TODS = (unsigned char*)(CIA1_REG+0x09);
+unsigned char* CIA1_TODM = (unsigned char*)(CIA1_REG+0x0A);
+unsigned char* CIA1_TODH = (unsigned char*)(CIA1_REG+0x0B);
 
 
 /* DRIVE IMAGE DATA */
@@ -192,15 +192,20 @@ void printSectorNumbers()
 void printTimer()
 {
     // read Hour to activate latch
-    char h = *CIA1_TODH;
-
-    char minutes = *CIA1_TODM;
-    char seconds = *CIA1_TODS;
+    unsigned char h = *CIA1_TODH;
+    char timerStr[6] = {0x0,0x0,'.',0x0,0x0,0x0};
+    char ml,mh = 0;
+    char sl,sh = 0;
     // convert BCD to binary
-    minutes = minutes & 0xF | ((minutes>> 4) & 0xF) * 10;
-    seconds = seconds & 0xF | ((seconds >> 4) & 0xF) * 10;
-    sprintf(cmd,"%02d.%02d",minutes,seconds);
-    putsxy(35,0,cmd);
+    ml = *CIA1_TODM & 0x0F;
+    mh = ((*CIA1_TODM >> 4) & 0x0F);
+    sl = *CIA1_TODS & 0x0F;
+    sh = ((*CIA1_TODS >> 4) & 0x0F);
+    timerStr[0] = 0x30;
+    timerStr[1] = 0x30+ml;
+    timerStr[3] = 0x30+sh;
+    timerStr[4] = 0x30+sl;
+    putsxy(35,0,timerStr);
     // relase latch
     h = *CIA1_TODH;
 }
