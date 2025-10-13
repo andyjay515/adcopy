@@ -105,11 +105,11 @@ int readSector(char driveid, char track,  char sec, char *buf)
     }
 
     // set buffer pointer at the beginning (defaults to 1)
-    res = krnio_puts(WCMDHANDLE,"B-P 6 0");
+    /*res = krnio_puts(RCMDHANDLE,"B-P 5 0");
     if(res <= 0) {
         krnio_close(RBHANDLE);
         return res;
-    }
+    }*/
 
     res = krnio_read(RBHANDLE,buf,BUFSIZE);
     if(res <= 0) {
