@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include "ciatimer.h"
 
+/* CIA registry address */
+#define CIA1_REG 0xDC00
+unsigned char* CIA1_TODT = (unsigned char*)(CIA1_REG+0x08);
+unsigned char* CIA1_TODS = (unsigned char*)(CIA1_REG+0x09);
+unsigned char* CIA1_TODM = (unsigned char*)(CIA1_REG+0x0A);
+unsigned char* CIA1_TODH = (unsigned char*)(CIA1_REG+0x0B);
+
 void getCiaTimer(sstr_t *tmpstr)
 {
     // read Hour to activate latch
@@ -30,4 +37,9 @@ void resetCiaTimer()
     *CIA1_TODM = 0;
     *CIA1_TODS = 0;
     *CIA1_TODT = 0;
+}
+
+void stopCiaTimer()
+{
+    *CIA1_TODH = 12;
 }

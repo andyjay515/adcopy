@@ -13,14 +13,6 @@ char sectors[35];
 
 sstr_t tmpstr;
 
-/* CIA registry address */
-#define CIA1_REG 0xDC00
-unsigned char* CIA1_TODT = (unsigned char*)(CIA1_REG+0x08);
-unsigned char* CIA1_TODS = (unsigned char*)(CIA1_REG+0x09);
-unsigned char* CIA1_TODM = (unsigned char*)(CIA1_REG+0x0A);
-unsigned char* CIA1_TODH = (unsigned char*)(CIA1_REG+0x0B);
-
-
 /* DRIVE IMAGE DATA */
 const char r1[15] = {0x70, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x6E, 0x0 };
 const char r2[15] = {0x5D, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x5D, 0x0 };
@@ -94,6 +86,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 putsxy(t+2,s+4,"!");
 
                 closeChannelsCleanup();
+                stopCiaTimer();
                
                 return -1;
             }
@@ -102,6 +95,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
             if (key_pressed(KSCAN_Q)) {
                 closeChannelsCleanup();
+                stopCiaTimer();
                 return -1;
             }
 
@@ -117,6 +111,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 putsxy(t+2,s+4,"!");
 
                 closeChannelsCleanup();
+                stopCiaTimer();
                 return -1;
             }
             putsxy(t+2,s+4,".");
@@ -126,6 +121,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
     }
 
     closeChannelsCleanup();
+    stopCiaTimer();
     return 0;
 }
 

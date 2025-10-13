@@ -51,7 +51,6 @@ void closeChannelsCleanup()
 {
     krnio_close(WCMDHANDLE);
     krnio_close(RCMDHANDLE);
-    *CIA1_TODH = 12;
     
 }
 
