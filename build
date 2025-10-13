@@ -1,0 +1,4 @@
+#!/bin/bash
+./compile
+c1541 -format "adcopy,01" d64 adcopy.d64
+c1541 -attach adcopy.d64 -write adcopy.prg adcopy
