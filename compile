@@ -1,2 +1,2 @@
 #!/bin/bash
-oscar64 -O2 -o=adcopy.prg main.c
+oscar64 -o=adcopy.prg main.c
