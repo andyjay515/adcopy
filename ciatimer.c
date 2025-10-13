@@ -1,0 +1,33 @@
+#include <stdio.h>
+#include "ciatimer.h"
+
+void getCiaTimer(sstr_t *tmpstr)
+{
+    // read Hour to activate latch
+    unsigned char h = *CIA1_TODH;
+    char timerStr[6] = {0x0,0x0,'.',0x0,0x0,0x0};
+    char ml,mh = 0;
+    char sl,sh = 0;
+    // convert BCD to binary
+    ml = *CIA1_TODM & 0x0F;
+    mh = ((*CIA1_TODM >> 4) & 0x0F);
+    sl = *CIA1_TODS & 0x0F;
+    sh = ((*CIA1_TODS >> 4) & 0x0F);
+    timerStr[0] = 0x30;
+    timerStr[1] = 0x30+ml;
+    timerStr[3] = 0x30+sh;
+    timerStr[4] = 0x30+sl;
+
+    set_sstr(tmpstr,timerStr);
+
+    // relase latch
+    h = *CIA1_TODH;
+}
+
+void resetCiaTimer()
+{
+    *CIA1_TODH = 12;
+    *CIA1_TODM = 0;
+    *CIA1_TODS = 0;
+    *CIA1_TODT = 0;
+}
