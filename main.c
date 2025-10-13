@@ -238,7 +238,15 @@ int getDriveInfo(char driveid)
     return res;
 }
 
-int copyDisk(char src_drive, char dest_drive)
+bool checkBufferEmpty(char *buf)
+{
+    for(int i=0;i<BUFSIZE;i++) {
+        if(buf[i] != 0) return false;
+    }
+    return true;
+}
+
+int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 {
     bool res = false;
 
@@ -281,6 +289,12 @@ int copyDisk(char src_drive, char dest_drive)
             }
 
             printTimer();
+
+            if(skip_empty && checkBufferEmpty(buffer)) {
+                putsxy(t+2,s+4,"0");
+                continue;
+            }
+
             putsxy(t+2,s+4,"W");
             if(writeSector(dest_drive,t,s,buffer) < 0) {
                 putsxy(t+2,s+4,"!");
@@ -306,8 +320,10 @@ int main(void)
     int res = 0;
     int key_y_cnt = 0;
     int key_n_cnt = 0;
-    int key_s_cnt = 0;
+    int key_c_cnt = 0;
     int key_q_cnt = 0;
+    int key_o_cnt = 0;
+    bool optimize = false;
 
     fillSectorsInfo();
     // clear screen
@@ -384,9 +400,10 @@ int main(void)
     } else {
         putsxy(16,13,"?");
     }
-  
-    putsxy(10,20,p"press S to continue");
-    putsxy(10,21,p"or Q to quit");
+
+    putsxy(10,20,p"press C for complete copy");
+    putsxy(10,21,p"press O for optimized copy");
+    putsxy(10,22,p"or Q to quit");
 
     keyb_poll();
 
@@ -394,12 +411,20 @@ int main(void)
         
         keyb_poll();
         
-        if(key_pressed(KSCAN_S)) {
-            key_s_cnt++;
+        if(key_pressed(KSCAN_C)) {
+            key_c_cnt++;
         }
         else {
             // if key is not pressed continuously reset counter
-            key_s_cnt = 0;
+            key_c_cnt = 0;
+        }
+
+        if(key_pressed(KSCAN_O)) {
+            key_o_cnt++;
+        }
+        else {
+            // if key is not pressed continuously reset counter
+            key_o_cnt = 0;
         }
 
         if(key_pressed(KSCAN_Q)) {
@@ -416,8 +441,14 @@ int main(void)
             return 0;
         }
 
-        if(key_s_cnt > 30) {
-            key_s_cnt = 0;
+        if(key_c_cnt > 30) {
+            key_c_cnt = 0;
+            break;
+        }
+
+        if(key_o_cnt > 30) {
+            key_o_cnt = 0;
+            optimize = true;
             break;
         }
     }
@@ -428,7 +459,7 @@ int main(void)
     printSectorNumbers();
     putsxy(10,0,p"press and hold Q to quit.");
     
-    res = copyDisk(src_drive,dest_drive);
+    res = copyDisk(src_drive,dest_drive,optimize);
     if(res >= 0) {
         putsxy(10,0,p"job complete! press Q to quit.");
     } else {
