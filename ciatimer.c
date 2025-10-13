@@ -20,7 +20,7 @@ void getCiaTimer(sstr_t *tmpstr)
     mh = ((*CIA1_TODM >> 4) & 0x0F);
     sl = *CIA1_TODS & 0x0F;
     sh = ((*CIA1_TODS >> 4) & 0x0F);
-    timerStr[0] = 0x30;
+    timerStr[0] = 0x30+mh;
     timerStr[1] = 0x30+ml;
     timerStr[3] = 0x30+sh;
     timerStr[4] = 0x30+sl;

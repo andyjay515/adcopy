@@ -62,6 +62,7 @@ int openCommandCannels(char src_drive, char dest_drive) {
     if(!res) {
         return -1;
     }
+    krnio_setnam("");
     res = krnio_open(WCMDHANDLE,dest_drive,15);
     if(!res) {
         return -1;

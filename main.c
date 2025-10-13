@@ -216,11 +216,11 @@ int main(void)
             
             // redraw info
 
-            set_sstr(&tmpstr,"in ");
+            set_sstr(&tmpstr,p"in ");
             append_sstr_num(&tmpstr,src_drive);
             putsxy(16,11,get_sstr(&tmpstr));
 
-            set_sstr(&tmpstr,"out ");
+            set_sstr(&tmpstr,p"out ");
             append_sstr_num(&tmpstr,dest_drive);
             putsxy(16,17,get_sstr(&tmpstr));
         }
