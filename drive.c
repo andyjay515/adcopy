@@ -125,6 +125,7 @@ int writeSector(char driveid, char track,  char sec, char *buf)
 {
   
     int res = 0;
+    
     // generic buffer
     krnio_setnam("#");
     // open buffer channel
@@ -136,14 +137,15 @@ int writeSector(char driveid, char track,  char sec, char *buf)
     res = krnio_puts(WCMDHANDLE,"B-P 6 0");
     if(res <= 0) {
         krnio_close(WFHANDLE);
-        return res;
+        return -1;
     }
 
     // fill buffer
     res = krnio_write(WFHANDLE,buf,BUFSIZE);
+    
+
     if(res <= 0) {
-        krnio_close(WFHANDLE);
-        return res;
+        return -1;
     }
 
     // prepare command to move head to sector
@@ -154,7 +156,7 @@ int writeSector(char driveid, char track,  char sec, char *buf)
     char* cmd = get_sstr(&tmpstr);
     res = krnio_puts(WCMDHANDLE,cmd);
     if(res <= 0) {
-        return res;
+        return -1;
     }
 
     // read status
@@ -164,10 +166,10 @@ int writeSector(char driveid, char track,  char sec, char *buf)
     res = atoi(cmd);
     if(res >= 20) {
         putsxy(10,3,cmd);
+        krnio_close(WFHANDLE);
         return -1;
     }
-    
     krnio_close(WFHANDLE);
-    return res;
+    return 0;
 
 }
