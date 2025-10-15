@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <c64/kernalio.h>
+#include <conio.h>
 #include <c64/keyboard.h>
 #include "sstr.h"
 #include "drive.h"
@@ -41,10 +42,13 @@ void setColorInfo()
 }
 
 void setDarkTheme() {
+#if defined(__C128__) || defined(__C128B__) || defined(__C128E__)
+#else
     unsigned char* border = (unsigned char*)53280;
     unsigned char* background = (unsigned char*)53281;
     *border = 11;
     *background = 0;
+#endif
     for(unsigned char* p = (unsigned char*)BASECOLOR_ADDR; p < (unsigned char*)(BASECOLOR_ADDR + 1000);p++) {
         *p = 15;
     }
@@ -94,10 +98,26 @@ void printTimer()
     putsxy(35,0,get_sstr(&tmpstr));
 }
 
+void resetCPU()
+{
+#if defined(__C128__) || defined(__C128B__) || defined(__C128E__)
+ __asm {
+        jmp 65341;
+
+       }
+#else
+    __asm {
+        jmp 64738;
+
+       }
+#endif
+}
+
 int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 {
     sstr_t tmpstr;
     bool res = false;
+    char key;
 
     setColorInfo();
 
@@ -112,12 +132,14 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
         for (char s=0; s < sectors[t-1]; s++){
             printTimer();
 
-            keyb_poll();
+            if(kbhit()) {
+                key = getch();
 
-            if (key_pressed(KSCAN_S)) {
-                closeChannelsCleanup();
-                stopCiaTimer();
-                return -1;
+                if (key == 'S') {
+                    closeChannelsCleanup();
+                    stopCiaTimer();
+                    return -1;
+                }
             }
 
             setAccentXY(t+2,s+4);
@@ -138,12 +160,14 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 continue;
             }
 
-            keyb_poll();
-
-            if (key_pressed(KSCAN_S)) {
-                closeChannelsCleanup();
-                stopCiaTimer();
-                return -1;
+            if(kbhit()) {
+                key = getch();
+        
+                if (key == 'S') { 
+                    closeChannelsCleanup();
+                    stopCiaTimer();
+                    return -1;
+                }
             }
 
             putsxy(t+2,s+4,"W");
@@ -204,13 +228,8 @@ int main(void)
 {
     char src_drive= 8;
     char dest_drive= 9;
-    char tmp;
+    char tmp,key;
     int res = 0;
-    int key_y_cnt = 0;
-    int key_n_cnt = 0;
-    int key_c_cnt = 0;
-    int key_q_cnt = 0;
-    int key_o_cnt = 0;
     bool optimize = false;
 
     fillSectorsInfo();
@@ -242,27 +261,12 @@ int main(void)
         putsxy(16,17,get_sstr(&tmpstr));
 
         putsxy(12,20,p"swap ?(Y/N)");
+        
         while(true) {
         
-            
-            keyb_poll();
-            
-            if (key_pressed(KSCAN_Y)) {   
-                key_y_cnt++;
-            } else {
-                // if key is not pressed continuously reset counter
-                key_y_cnt = 0;
-            }
-            if( key_pressed(KSCAN_N)) {
-                key_n_cnt++;
-            } else {
-                // if key is not pressed continuously reset counter
-                key_n_cnt = 0;
-            }
+            key = getch();
 
-            if(key_y_cnt > 100) {
-                key_y_cnt = -100;
-
+            if (key=='Y') {   
                 // swap drives
                 tmp=dest_drive;
                 dest_drive=src_drive;
@@ -277,13 +281,15 @@ int main(void)
                 set_sstr(&tmpstr,p"out ");
                 append_sstr_num(&tmpstr,dest_drive);
                 putsxy(16,17,get_sstr(&tmpstr));
-            }
-            if(key_n_cnt > 100) {
-                key_n_cnt = 0;
+            } else if (key=='N') {
                 break;
+            } else if( key=='Q') {
+                resetCPU();
+                return 0;
             }
 
         }
+        
         res = getDriveInfo(src_drive);
         if(res > 0) {
             set_sstr(&tmpstr,"");
@@ -308,51 +314,19 @@ int main(void)
 
         while(true) {
             
-            keyb_poll();
+            key = getch();
             
-            if(key_pressed(KSCAN_C)) {
-                key_c_cnt++;
-            }
-            else {
-                // if key is not pressed continuously reset counter
-                key_c_cnt = 0;
-            }
-
-            if(key_pressed(KSCAN_O)) {
-                key_o_cnt++;
-            }
-            else {
-                // if key is not pressed continuously reset counter
-                key_o_cnt = 0;
-            }
-
-            if(key_pressed(KSCAN_Q)) {
-                key_q_cnt++;
-            }
-            else {
-                // if key is not pressed continuously reset counter
-                key_q_cnt = 0;
-            }
-
-            if (key_q_cnt > 30) {
-                key_q_cnt = 0;
-                // call soft reset
-                __asm {
-                    jmp 64738;
-                }
-                return 0;
-            }
-
-            if(key_c_cnt > 30) {
-                key_c_cnt = 0;
+            if(key=='C') {
                 break;
             }
-
-            if(key_o_cnt > 30) {
-                key_o_cnt = 0;
+            else if(key=='O') {
                 optimize = true;
                 break;
-            }
+            } else if (key=='Q') {
+                resetCPU();
+                return 0;
+            } 
+
         }
 
         // copy screen
@@ -371,33 +345,12 @@ int main(void)
 
         while(true) {
             
-            keyb_poll();
+            key = getch();
 
-             if(key_pressed(KSCAN_C)) {
-                key_c_cnt++;
-            }
-            else {
-                // if key is not pressed continuously reset counter
-                key_c_cnt = 0;
-            }
-
-             if(key_c_cnt > 30) {
-                key_c_cnt = 0;
+            if(key == 'C') {
                 break;
-            }
-            
-            if(key_pressed(KSCAN_Q)) {
-                key_q_cnt++;
-            }
-            else {
-                // if key is not pressed continuously reset counter
-                key_q_cnt = 0;
-            }   
-            if (key_q_cnt > 30) {
-                key_q_cnt = 0;
-                __asm {
-                    jmp 64738;
-                }
+            } else if (key=='Q') {
+                resetCPU();
                 return 0;
             }
         }
