@@ -67,6 +67,10 @@ int openCommandCannels(char src_drive, char dest_drive) {
     if(!res) {
         return -1;
     }
+
+#if defined(__C128__) || defined(__C128B__) || defined(__C128E__)
+    krnio_setbnk(0,0);
+#endif
     return 0;
 }
 
