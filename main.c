@@ -31,6 +31,13 @@ void setColorInfo()
     for(unsigned char* p = s; p < e;p++) {
         *p = 4;
     }
+
+    s= (unsigned char*)(BASECOLOR_ADDR);
+    e= (unsigned char*)(BASECOLOR_ADDR + 40);
+
+    for(unsigned char* p = s; p < e;p++) {
+        *p = 15;
+    }
 }
 
 void setDarkTheme() {
@@ -54,7 +61,7 @@ void setNormalXY(char x, char y) {
     unsigned char* p = (unsigned char*)(BASECOLOR_ADDR + y*40 + x);
     *p = 15;
 }
- 
+
 void fillSectorsInfo()
 {
     for(int i=0;i<17;i++) sectors[i] = 21;
@@ -89,6 +96,7 @@ void printTimer()
 
 int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 {
+    sstr_t tmpstr;
     bool res = false;
 
     setColorInfo();
@@ -114,8 +122,9 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
             setAccentXY(t+2,s+4);
             putsxy(t+2,s+4,"R");
-            if(readSector(src_drive,t,s,buffer) < 0) {
+            if(readSector(src_drive,t,s,buffer, &tmpstr) < 0) {
                 putsxy(t+2,s+4,"!");
+                putsxy(10,3,get_sstr(&tmpstr));
                 continue;
             }
 
@@ -138,8 +147,9 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
             }
 
             putsxy(t+2,s+4,"W");
-            if(writeSector(dest_drive,t,s,buffer) < 0) {
+            if(writeSector(dest_drive,t,s,buffer, &tmpstr) < 0) {
                 putsxy(t+2,s+4,"!");
+                putsxy(10,3,get_sstr(&tmpstr));
                 continue;
             }
 
@@ -183,6 +193,13 @@ void printSectorNumbers()
     }
 }
 
+void printLegend()
+{
+    putsxy(33,22,p"!=error");
+    putsxy(28,23,p"o=skip, .=ok");
+    putsxy(26,24,p"r=read,w=write");
+}
+
 int main(void)
 {
     char src_drive= 8;
@@ -196,8 +213,6 @@ int main(void)
     int key_o_cnt = 0;
     bool optimize = false;
 
-    setDarkTheme();
-
     fillSectorsInfo();
 
     while(true) {
@@ -205,6 +220,8 @@ int main(void)
         putchar(147);
 
         putchar(14);
+
+        setDarkTheme();
 
         optimize = false;
 
@@ -342,7 +359,8 @@ int main(void)
         putchar(147);
         printTrackNumbers();
         printSectorNumbers();
-        putsxy(10,0,p"press and hold S to stop.");
+        printLegend();
+        putsxy(10,0,p"press and hold S to stop");
         
         res = copyDisk(src_drive,dest_drive,optimize);
         if(res >= 0) {

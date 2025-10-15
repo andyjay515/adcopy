@@ -70,7 +70,7 @@ int openCommandCannels(char src_drive, char dest_drive) {
     return 0;
 }
 
-int readSector(char driveid, char track,  char sec, char *buf)
+int readSector(char driveid, char track,  char sec, char *buf,  sstr_t* status_str)
 {
     int res = 0;
     // generic buffer
@@ -100,7 +100,7 @@ int readSector(char driveid, char track,  char sec, char *buf)
     //sscanf(cmd,"%d",&res);
     res = atoi(cmd);
     if(res >= 20) {
-        putsxy(10,3,cmd);
+        set_sstr(status_str,cmd);
         return -1;
     }
 
@@ -121,7 +121,7 @@ int readSector(char driveid, char track,  char sec, char *buf)
             
 }
 
-int writeSector(char driveid, char track,  char sec, char *buf)
+int writeSector(char driveid, char track,  char sec, char *buf, sstr_t* status_str)
 {
   
     int res = 0;
@@ -165,7 +165,7 @@ int writeSector(char driveid, char track,  char sec, char *buf)
     //sscanf(cmd,"%d",&res);
     res = atoi(cmd);
     if(res >= 20) {
-        putsxy(10,3,cmd);
+        set_sstr(status_str,cmd);
         krnio_close(WFHANDLE);
         return -1;
     }
