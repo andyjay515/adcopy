@@ -1,4 +1,6 @@
 #!/bin/bash
 ./compile
 c1541 -format "adcopy,01" d64 adcopy.d64
+c1541 -attach adcopy.d64 -write launch.prg launch
 c1541 -attach adcopy.d64 -write adcopy.prg adcopy
+c1541 -attach adcopy.d64 -write adcopy128.prg adcopy128
