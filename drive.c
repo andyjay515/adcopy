@@ -74,54 +74,135 @@ int openCommandCannels(char src_drive, char dest_drive) {
     return 0;
 }
 
-int readSector(char driveid, char track,  char sec, char *buf,  sstr_t* status_str)
-{
-    int res = 0;
+int openBufferChannel(char file_handle_buff, char buf_num, char channel_num, char driveid) {
+     int res = 0;
     // generic buffer
-    krnio_setnam("#");
+    set_sstr(&tmpstr,"#");
+    append_sstr_num(&tmpstr,buf_num);
+    char* cmd = get_sstr(&tmpstr);
+    krnio_setnam(cmd);
     // open buffer channel
-    if(!krnio_open(RBHANDLE,driveid,5)){
+    if(!krnio_open(file_handle_buff,driveid,channel_num)){
         return -1;
     }
+    return 0;
+}
+
+int loadSectorToBuffer(char file_handle_cmd, char channel,char track, char sec, sstr_t* status_str)
+{
+    int res = 0;
 
     // prepare command to move head to sector
-    
-    set_sstr(&tmpstr,"U1 5 0 ");
+    set_sstr(&tmpstr,"U1 ");
+    append_sstr_num(&tmpstr,channel);
+    append_sstr(&tmpstr," 0 ");
     append_sstr_num(&tmpstr,track);
     append_sstr(&tmpstr," ");
     append_sstr_num(&tmpstr,sec);
     char* cmd = get_sstr(&tmpstr);
-    res = krnio_puts(RCMDHANDLE,cmd);
+    res = krnio_puts(file_handle_cmd,cmd);
     if(res <= 0) {
-        krnio_close(RBHANDLE);
-        return res;
+        return -1;
     }
 
     // read status
-    krnio_read(RCMDHANDLE,cmd,16);
+    krnio_read(file_handle_cmd,cmd,16);
     cmd[15] = 0;
-    
-    //sscanf(cmd,"%d",&res);
+
     res = atoi(cmd);
     if(res >= 20) {
         set_sstr(status_str,cmd);
         return -1;
     }
+    return 0;
+            
+}
 
-    // set buffer pointer at the beginning (defaults to 1)
-    /*res = krnio_puts(RCMDHANDLE,"B-P 5 0");
-    if(res <= 0) {
-        krnio_close(RBHANDLE);
-        return res;
-    }*/
-
-    res = krnio_read(RBHANDLE,buf,BUFSIZE);
-    if(res <= 0) {
-        krnio_close(RBHANDLE);
-        return res;
+int readBufferToMem(char file_handle_buff, char* buf)
+{
+    int res = 0;
+    res = krnio_read(file_handle_buff,buf,BUFSIZE);
+    if(res < 0) {
+        return -1;
     }
+    return 0;
+}
+
+int writeMemToBuffer(char file_handle_buff, char file_handle_cmd, char channel, char* buf)
+{
+    int res = 0;
+    // set buffer pointer at the beginning (defaults to 1)
+    set_sstr(&tmpstr,"B-P ");
+    append_sstr_num(&tmpstr,channel);
+    append_sstr(&tmpstr," 0");
+    char* cmd = get_sstr(&tmpstr);
+    res = krnio_puts(file_handle_cmd,cmd);
+    if(res <= 0) {
+        krnio_close(file_handle_buff);
+        return -1;
+    }
+
+    // fill buffer
+    res = krnio_write(file_handle_buff,buf,BUFSIZE);
+    if(res < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int saveBufferToSector(char file_handle_cmd, char channel,char track, char sec, sstr_t* status_str)
+{
+    int res = 0;
+    // prepare command to move head to sector
+    set_sstr(&tmpstr,"U2 ");
+    append_sstr_num(&tmpstr,channel);
+    append_sstr(&tmpstr," 0 ");
+    append_sstr_num(&tmpstr,track);
+    append_sstr(&tmpstr," ");
+    append_sstr_num(&tmpstr,sec);
+    char* cmd = get_sstr(&tmpstr);
+    res = krnio_puts(file_handle_cmd,cmd);
+    if(res <= 0) {
+        return -1;
+    }
+
+    // read status
+    krnio_read(file_handle_cmd,cmd,16);
+    cmd[15] = 0;
+    
+    res = atoi(cmd);
+    if(res >= 20) {
+        set_sstr(status_str,cmd);
+        return -1;
+    }
+    return 0;
+            
+}
+
+int readSector(char driveid, char track,  char sec, char *buf,  sstr_t* status_str)
+{
+    int res = 0;
+
+    res=openBufferChannel(RBHANDLE,1,5,driveid);
+    if(res < 0) {
+        krnio_close(RBHANDLE);
+        return -1;
+    }
+
+    res = loadSectorToBuffer(RCMDHANDLE,5,track,sec,status_str);
+    if(res < 0) {
+        krnio_close(RBHANDLE);
+        return -1;
+    }
+
+    res = readBufferToMem(RBHANDLE,buf);
     krnio_close(RBHANDLE);
-    return res;
+    if(res < 0) {
+        return -1;
+    }
+    
+    return 0;
             
 }
 
@@ -130,50 +211,24 @@ int writeSector(char driveid, char track,  char sec, char *buf, sstr_t* status_s
   
     int res = 0;
     
-    // generic buffer
-    krnio_setnam("#");
-    // open buffer channel
-    if(!krnio_open(WFHANDLE,driveid,6)){
-        return -1;
-    }
-    
-    // set buffer pointer at the beginning (defaults to 1)
-    res = krnio_puts(WCMDHANDLE,"B-P 6 0");
-    if(res <= 0) {
+    res=openBufferChannel(WFHANDLE,2,6,driveid);
+    if(res < 0) {
         krnio_close(WFHANDLE);
         return -1;
     }
 
-    // fill buffer
-    res = krnio_write(WFHANDLE,buf,BUFSIZE);
-    
-
-    if(res <= 0) {
-        return -1;
-    }
-
-    // prepare command to move head to sector
-    set_sstr(&tmpstr,"U2 6 0 ");
-    append_sstr_num(&tmpstr,track);
-    append_sstr(&tmpstr," ");
-    append_sstr_num(&tmpstr,sec);
-    char* cmd = get_sstr(&tmpstr);
-    res = krnio_puts(WCMDHANDLE,cmd);
-    if(res <= 0) {
-        return -1;
-    }
-
-    // read status
-    krnio_read(WCMDHANDLE,cmd,16);
-    cmd[15] = 0;
-    //sscanf(cmd,"%d",&res);
-    res = atoi(cmd);
-    if(res >= 20) {
-        set_sstr(status_str,cmd);
+    res=writeMemToBuffer(WFHANDLE,WCMDHANDLE,6,buf);
+    if(res < 0) {
         krnio_close(WFHANDLE);
         return -1;
     }
+
+    res= saveBufferToSector(WCMDHANDLE,6,track,sec,status_str);
     krnio_close(WFHANDLE);
+    if(res < 0) {       
+        return -1;
+    }
+
     return 0;
 
 }
