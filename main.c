@@ -131,17 +131,15 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
     for(char t=1; t < 36; t++) {
         for (char s=0; s < sectors[t-1]; s++){
             printTimer();
+           
+            key = getchx();
 
-            if(kbhit()) {
-                key = getch();
-
-                if (key == 'S') {
-                    closeChannelsCleanup();
-                    stopCiaTimer();
-                    return -1;
-                }
+            if (key == 'S') {
+                closeChannelsCleanup();
+                stopCiaTimer();
+                return -1;
             }
-
+         
             setAccentXY(t+2,s+4);
             putsxy(t+2,s+4,"R");
             if(readSector(src_drive,t,s,buffer, &tmpstr) < 0) {
@@ -149,8 +147,6 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 putsxy(10,3,get_sstr(&tmpstr));
                 continue;
             }
-
-            
 
             printTimer();
 
@@ -160,15 +156,15 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 continue;
             }
 
-            if(kbhit()) {
-                key = getch();
-        
-                if (key == 'S') { 
-                    closeChannelsCleanup();
-                    stopCiaTimer();
-                    return -1;
-                }
+            
+            key = getchx();
+    
+            if (key == 'S') { 
+                closeChannelsCleanup();
+                stopCiaTimer();
+                return -1;
             }
+            
 
             putsxy(t+2,s+4,"W");
             if(writeSector(dest_drive,t,s,buffer, &tmpstr) < 0) {
