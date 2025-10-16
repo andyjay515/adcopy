@@ -6,7 +6,7 @@
 #include "drive.h"
 #include "ciatimer.h"
 
-
+#define WELCOME_MSG p"Andy Jay 202510.1"
 #define BASESCR_ADDR 0x0400
 #define BASECOLOR_ADDR 0xD800
 char buffer[BUFSIZE];
@@ -242,7 +242,7 @@ int main(void)
 
         // welcome message
         putsxy(10,5,p"Another Disk Copy");
-        putsxy(10,23,p"Andy Jay 202510");
+        putsxy(10,23,WELCOME_MSG);
         keyb_poll();
 
         drawBox(8,7);
