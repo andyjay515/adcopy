@@ -135,7 +135,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
             key = getchx();
 
             if (key == 'S') {
-                closeChannelsCleanup();
+                closeCommandChannels();
                 stopCiaTimer();
                 return -1;
             }
@@ -160,7 +160,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
             key = getchx();
     
             if (key == 'S') { 
-                closeChannelsCleanup();
+                closeCommandChannels();
                 stopCiaTimer();
                 return -1;
             }
@@ -180,7 +180,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
         }
     }
 
-    closeChannelsCleanup();
+    closeCommandChannels();
     stopCiaTimer();
     return 0;
 }

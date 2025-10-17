@@ -6,7 +6,7 @@ sstr_t tmpstr;
 
 #define RBHANDLE 5
 #define RCMDHANDLE 15
-#define WFHANDLE 6
+#define WBHANDLE 9
 #define WCMDHANDLE 16
 
 int getDriveInfo(char driveid)
@@ -47,7 +47,7 @@ bool checkBufferEmpty(char *buf)
     return true;
 }
 
-void closeChannelsCleanup()
+void closeCommandChannels()
 {
     krnio_close(WCMDHANDLE);
     krnio_close(RCMDHANDLE);
@@ -211,20 +211,20 @@ int writeSector(char driveid, char track,  char sec, char *buf, sstr_t* status_s
   
     int res = 0;
     
-    res=openBufferChannel(WFHANDLE,2,6,driveid);
+    res=openBufferChannel(WBHANDLE,2,6,driveid);
     if(res < 0) {
-        krnio_close(WFHANDLE);
+        krnio_close(WBHANDLE);
         return -1;
     }
 
-    res=writeMemToBuffer(WFHANDLE,WCMDHANDLE,6,buf);
+    res=writeMemToBuffer(WBHANDLE,WCMDHANDLE,6,buf);
     if(res < 0) {
-        krnio_close(WFHANDLE);
+        krnio_close(WBHANDLE);
         return -1;
     }
 
     res= saveBufferToSector(WCMDHANDLE,6,track,sec,status_str);
-    krnio_close(WFHANDLE);
+    krnio_close(WBHANDLE);
     if(res < 0) {       
         return -1;
     }
