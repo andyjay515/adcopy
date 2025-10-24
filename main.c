@@ -9,10 +9,9 @@
 #define WELCOME_MSG p"Andy Jay 202510.1"
 #define BASESCR_ADDR 0x0400
 #define BASECOLOR_ADDR 0xD800
-char buffer[BUFSIZE];
-char sectors[35];
 
-sstr_t tmpstr;
+
+bool waitWriteComplete = false;
 
 /* DRIVE IMAGE DATA */
 const char r1[15] = {0x70, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x6E, 0x0 };
@@ -66,13 +65,7 @@ void setNormalXY(char x, char y) {
     *p = 15;
 }
 
-void fillSectorsInfo()
-{
-    for(int i=0;i<17;i++) sectors[i] = 21;
-    for(int i=17;i<24;i++) sectors[i] = 19;
-    for(int i=24;i<30;i++) sectors[i] = 18;
-    for(int i=30;i<35;i++) sectors[i] = 17;
-}
+
 
 void putsxy(char x, char y, const char *s)
 {
@@ -94,6 +87,7 @@ void drawBox(char x, char y)
 
 void printTimer()
 {
+    sstr_t tmpstr;
     getCiaTimer(&tmpstr);
     putsxy(35,0,get_sstr(&tmpstr));
 }
@@ -129,9 +123,11 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
     
     // loop tracks and sectors
     for(char t=1; t < 36; t++) {
-        for (char s=0; s < sectors[t-1]; s++){
+        char s=0;
+        for(s= 0; s < sectors[t-1]; s++) {
+
             printTimer();
-           
+        
             key = getchx();
 
             if (key == 'S') {
@@ -139,45 +135,44 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 stopCiaTimer();
                 return -1;
             }
-         
+        
             setAccentXY(t+2,s+4);
             putsxy(t+2,s+4,"R");
-            if(readSector(src_drive,t,s,buffer, &tmpstr) < 0) {
+
+            res=readSector(src_drive,t,s,&tmpstr);
+            if(res < 0) {
                 putsxy(t+2,s+4,"!");
-                putsxy(10,3,get_sstr(&tmpstr));
                 continue;
             }
 
             printTimer();
 
-            if(skip_empty && checkBufferEmpty(buffer)) {
+            if(skip_empty && checkBufferEmpty()) {
                 putsxy(t+2,s+4,"O");
-                setNormalXY(t+2, s+4);
                 continue;
-            }
+            } 
 
-            
             key = getchx();
-    
+
             if (key == 'S') { 
                 closeCommandChannels();
                 stopCiaTimer();
                 return -1;
             }
-            
 
             putsxy(t+2,s+4,"W");
-            if(writeSector(dest_drive,t,s,buffer, &tmpstr) < 0) {
+
+            res=writeSector(dest_drive,t,s,&tmpstr);
+            if(res < 0) {
                 putsxy(t+2,s+4,"!");
-                putsxy(10,3,get_sstr(&tmpstr));
                 continue;
             }
-
             
             putsxy(t+2,s+4,".");
             setNormalXY(t+2, s+4);
-            keyb_poll();
+
         }
+        
     }
 
     closeCommandChannels();
@@ -187,6 +182,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
 void printTrackNumbers()
 {
+    sstr_t tmpstr;
     for(int t=1; t < 36; t++) {
         
         set_sstr(&tmpstr,"");
@@ -204,6 +200,7 @@ void printTrackNumbers()
 
 void printSectorNumbers()
 {
+    sstr_t tmpstr;
     for(int s=0; s < 21; s++) {
         
         set_sstr(&tmpstr,"");
@@ -227,6 +224,7 @@ int main(void)
     char tmp,key;
     int res = 0;
     bool optimize = false;
+    sstr_t tmpstr;
 
     fillSectorsInfo();
 
