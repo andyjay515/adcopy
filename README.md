@@ -23,3 +23,9 @@ Just run build script in local folder
 ## 🚫 Disclaimer  
 This utility is intended solely for archival and preservation purposes.  
 **Do not use it to create unauthorized copies of software you do not own.**
+
+![Alt text](images/home.png)
+
+![Alt text](images/screen2.png)
+
+![Alt text](images/screen3.png)
