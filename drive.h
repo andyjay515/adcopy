@@ -11,4 +11,6 @@ int getDriveInfo(char driveid);
 bool checkBufferEmpty();
 void fillSectorsInfo();
 
+int changeBusSpeed();
+
 #pragma compile("drive.c")

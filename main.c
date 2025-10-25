@@ -85,11 +85,11 @@ void drawBox(char x, char y)
     putsxy(x,y+5,r6);   
 }
 
-void printTimer()
+void printTimer(char ypos)
 {
     sstr_t tmpstr;
     getCiaTimer(&tmpstr);
-    putsxy(35,0,get_sstr(&tmpstr));
+    putsxy(35,ypos,get_sstr(&tmpstr));
 }
 
 void resetCPU()
@@ -120,13 +120,18 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
     if(openCommandCannels(src_drive,dest_drive) < 0) {
         return -1;
     }
+
+    if(changeBusSpeed() < 0) {
+        closeCommandChannels();
+        return -1;
+    }
     
     // loop tracks and sectors
     for(char t=1; t < 36; t++) {
         char s=0;
         for(s= 0; s < sectors[t-1]; s++) {
 
-            printTimer();
+            printTimer(0);
         
             key = getchx();
 
@@ -145,7 +150,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 continue;
             }
 
-            printTimer();
+            printTimer(0);
 
             if(skip_empty && checkBufferEmpty()) {
                 putsxy(t+2,s+4,"O");
@@ -177,6 +182,7 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
     closeCommandChannels();
     stopCiaTimer();
+    printTimer(3);
     return 0;
 }
 

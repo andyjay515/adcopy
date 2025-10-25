@@ -64,6 +64,48 @@ void closeCommandChannels()
     
 }
 
+int changeBusSpeed() {
+    int res = 0;
+    int addr = 0x1806;
+    char buf[32];
+    sstr_t tmpstr;
+    char cmd[8]={'M','-','W',addr&0xFF,addr>>8,0x02,0x00,0x01};
+    char cmd2[6]={'M','-','R',addr&0xFF,addr>>8,0x02};
+    
+
+    // sweet spot for IRQ timing
+
+    res = krnio_write(RCMDHANDLE,cmd,sizeof(cmd));
+    if(res <= 0) {
+        return -1;
+    }
+
+    res = krnio_write(WCMDHANDLE,cmd,sizeof(cmd));
+    if(res <= 0) {
+        return -1;
+    }
+
+    addr = 0x1C06;
+    cmd[3] = addr&0xFF;
+    cmd[4] = addr>>8;
+    cmd2[3] = addr&0xFF;
+    cmd2[4] = addr>>8;
+    // sweet spot
+    cmd[6]=0x3A;
+    cmd[7]=0x0F;
+
+    res = krnio_write(RCMDHANDLE,cmd,sizeof(cmd));
+    if(res <= 0) {
+        return -1;
+    }
+
+    res = krnio_write(WCMDHANDLE,cmd,sizeof(cmd));
+    if(res <= 0) {
+        return -1;
+    }
+    return 0;
+}
+
 int openCommandCannels(char src_drive, char dest_drive) {
     int res = 0;
     // open command channels
