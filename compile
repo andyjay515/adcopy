@@ -1,4 +1,4 @@
 #!/bin/bash
 petcat -w2 -o launch.prg -- launch.bas
-oscar64 -o=adcopy.prg main.c
-oscar64 -tm=c128e -o=adcopy128.prg main.c
+oscar64 -o=./release/adcopy.prg main.c
+oscar64 -tm=c128e -o=./release/adcopy128.prg main.c
