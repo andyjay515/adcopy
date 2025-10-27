@@ -5,13 +5,12 @@
 #include "sstr.h"
 #include "drive.h"
 #include "ciatimer.h"
+#include "fdc.h"
 
 #define WELCOME_MSG p"Andy Jay 202510.1"
 #define BASESCR_ADDR 0x0400
 #define BASECOLOR_ADDR 0xD800
 
-
-bool waitWriteComplete = false;
 
 /* DRIVE IMAGE DATA */
 const char r1[15] = {0x70, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x6E, 0x0 };
@@ -117,14 +116,16 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
     resetCiaTimer();
 
-    if(openCommandCannels(src_drive,dest_drive) < 0) {
+    bool waitWrite = false;
+
+    if(openCommandChannels(src_drive,dest_drive) < 0) {
         return -1;
     }
 
-    if(changeBusSpeed() < 0) {
+    /*if(changeBusSpeed() < 0) {
         closeCommandChannels();
         return -1;
-    }
+    }*/
     
     // loop tracks and sectors
     for(char t=1; t < 36; t++) {
@@ -147,6 +148,12 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
             res=readSector(src_drive,t,s,&tmpstr);
             if(res < 0) {
                 putsxy(t+2,s+4,"!");
+                if(waitWrite) {
+                    waitWrite = false;
+                    waitWriteComplete();
+                    putsxy(t+2,s+4-1,".");
+                    setNormalXY(t+2, s+4-1);
+                }
                 continue;
             }
 
@@ -154,8 +161,21 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
             if(skip_empty && checkBufferEmpty()) {
                 putsxy(t+2,s+4,"O");
+                if(waitWrite) {
+                    waitWrite = false;
+                    waitWriteComplete();
+                    putsxy(t+2,s+4-1,".");
+                    setNormalXY(t+2, s+4-1);
+                }
                 continue;
-            } 
+            }
+            
+            if(waitWrite) {
+                waitWrite = false;
+                waitWriteComplete();
+                putsxy(t+2,s+4-1,".");
+                setNormalXY(t+2, s+4-1);
+            }
 
             key = getchx();
 
@@ -172,12 +192,18 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 putsxy(t+2,s+4,"!");
                 continue;
             }
-            
-            putsxy(t+2,s+4,".");
-            setNormalXY(t+2, s+4);
+
+            waitWrite = true;
 
         }
-        
+
+        if(waitWrite) {
+            waitWrite = false;
+            waitWriteComplete();
+            putsxy(t+2,s+4-1,".");
+            setNormalXY(t+2, s+4-1);
+        }
+
     }
 
     closeCommandChannels();
@@ -222,6 +248,7 @@ void printLegend()
     putsxy(28,23,p"o=skip, .=ok");
     putsxy(26,24,p"r=read,w=write");
 }
+
 
 int main(void)
 {

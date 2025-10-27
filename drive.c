@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "sstr.h"
 #include "drive.h"
-
+#include "fdc.h"
 
 #define BUFSIZE 256
 #define RBHANDLE 5
@@ -106,7 +106,7 @@ int changeBusSpeed() {
     return 0;
 }
 
-int openCommandCannels(char src_drive, char dest_drive) {
+int openCommandChannels(char src_drive, char dest_drive) {
     int res = 0;
     // open command channels
     krnio_setnam("");
@@ -129,7 +129,7 @@ int openCommandCannels(char src_drive, char dest_drive) {
 int openBufferChannel(char file_handle_buff, char ch_num,char driveid) {
      int res = 0;
     // generic buffer
-    krnio_setnam("#");
+    krnio_setnam("#1");
     // open buffer channel
     if(!krnio_open(file_handle_buff,driveid,ch_num)){
         return -1;
@@ -283,11 +283,17 @@ int writeSector(char driveid, char track,  char sec, sstr_t* status_str)
         return -1;
     }
 
-    res= saveBufferToSector(track,sec, status_str);
-    if(res < 0) {       
+    res= fdc_startWriteSector(WCMDHANDLE,track,sec);
+    krnio_close(WBHANDLE);
+    if(res < 0) {
         return -1;
     }
 
     return 0;
 
+}
+
+int waitWriteComplete(){
+
+    return waitCmdExecution(WCMDHANDLE);
 }
