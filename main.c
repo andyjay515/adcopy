@@ -106,6 +106,31 @@ void resetCPU()
 #endif
 }
 
+char t = 0;
+char s = 0;
+char old_t = 0;
+char old_s = 0;
+
+void printErrorMsg(sstr_t* status_str)
+{
+    putsxy(10,3,get_sstr(status_str));
+    
+}
+
+void printWriteOpRes(sstr_t* status_str)
+{
+    int res = waitWriteResult(status_str);
+    if(res < 0) {
+        putsxy(old_t+2,old_s+4,"!");
+        printErrorMsg(status_str);
+        return;
+    } else {
+        setNormalXY(old_t+2, old_s+4);
+        putsxy(old_t+2,old_s+4,".");
+    }
+    
+}
+
 int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 {
     sstr_t tmpstr;
@@ -118,18 +143,15 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
 
     bool waitWrite = false;
 
+    t=old_t=1;
+    s=old_s=0;
     if(openCommandChannels(src_drive,dest_drive) < 0) {
         return -1;
     }
-
-    /*if(changeBusSpeed() < 0) {
-        closeCommandChannels();
-        return -1;
-    }*/
     
     // loop tracks and sectors
-    for(char t=1; t < 36; t++) {
-        char s=0;
+    for(t=1; t < 36; t++) {
+
         for(s= 0; s < sectors[t-1]; s++) {
 
             printTimer(0);
@@ -148,11 +170,10 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
             res=readSector(src_drive,t,s,&tmpstr);
             if(res < 0) {
                 putsxy(t+2,s+4,"!");
+                printErrorMsg(&tmpstr);
                 if(waitWrite) {
                     waitWrite = false;
-                    waitWriteComplete();
-                    putsxy(t+2,s+4-1,".");
-                    setNormalXY(t+2, s+4-1);
+                    printWriteOpRes(&tmpstr);
                 }
                 continue;
             }
@@ -163,18 +184,14 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
                 putsxy(t+2,s+4,"O");
                 if(waitWrite) {
                     waitWrite = false;
-                    waitWriteComplete();
-                    putsxy(t+2,s+4-1,".");
-                    setNormalXY(t+2, s+4-1);
+                    printWriteOpRes(&tmpstr);
                 }
                 continue;
             }
             
             if(waitWrite) {
                 waitWrite = false;
-                waitWriteComplete();
-                putsxy(t+2,s+4-1,".");
-                setNormalXY(t+2, s+4-1);
+                printWriteOpRes(&tmpstr);
             }
 
             key = getchx();
@@ -190,19 +207,18 @@ int copyDisk(char src_drive, char dest_drive, bool skip_empty = false)
             res=writeSector(dest_drive,t,s,&tmpstr);
             if(res < 0) {
                 putsxy(t+2,s+4,"!");
+                printErrorMsg(&tmpstr);
                 continue;
             }
 
             waitWrite = true;
 
+            old_t = t;
+            old_s = s;
+
         }
 
-        if(waitWrite) {
-            waitWrite = false;
-            waitWriteComplete();
-            putsxy(t+2,s+4-1,".");
-            setNormalXY(t+2, s+4-1);
-        }
+        
 
     }
 

@@ -11,6 +11,52 @@
 
 char buffer[BUFSIZE];
 
+char error_messages[13][16] = {
+    "00,OK",
+    "20,READ ERROR",
+    "21,READ ERROR",
+    "22,READ ERROR",
+    "23,READ ERROR",
+    "24,READ ERROR",
+    "25,WRITE ERROR",
+    "26,WRITE PROTECT",
+    "27,READ ERROR",
+    "28,READ ERROR",
+    "29,DISK ID MISM.",
+    "74,DRIVE NOT RDY",
+    "UNKNOW ERROR"
+};
+
+char *getErrorMessage(char code)
+{
+    switch (code)
+    {
+    case 0:
+    case 1:
+        return error_messages[0];
+        break;
+        
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+        return error_messages[code];
+        break;
+    case 15:
+        return error_messages[12];
+        break;
+    default:
+        return error_messages[13];
+    }
+    
+}
+
 void fillSectorsInfo()
 {
     for(int i=0;i<17;i++) sectors[i] = 21;
@@ -64,48 +110,6 @@ void closeCommandChannels()
     
 }
 
-int changeBusSpeed() {
-    int res = 0;
-    int addr = 0x1806;
-    char buf[32];
-    sstr_t tmpstr;
-    char cmd[8]={'M','-','W',addr&0xFF,addr>>8,0x02,0x00,0x01};
-    char cmd2[6]={'M','-','R',addr&0xFF,addr>>8,0x02};
-    
-
-    // sweet spot for IRQ timing
-
-    res = krnio_write(RCMDHANDLE,cmd,sizeof(cmd));
-    if(res <= 0) {
-        return -1;
-    }
-
-    res = krnio_write(WCMDHANDLE,cmd,sizeof(cmd));
-    if(res <= 0) {
-        return -1;
-    }
-
-    addr = 0x1C06;
-    cmd[3] = addr&0xFF;
-    cmd[4] = addr>>8;
-    cmd2[3] = addr&0xFF;
-    cmd2[4] = addr>>8;
-    // sweet spot
-    cmd[6]=0x3A;
-    cmd[7]=0x0F;
-
-    res = krnio_write(RCMDHANDLE,cmd,sizeof(cmd));
-    if(res <= 0) {
-        return -1;
-    }
-
-    res = krnio_write(WCMDHANDLE,cmd,sizeof(cmd));
-    if(res <= 0) {
-        return -1;
-    }
-    return 0;
-}
-
 int openCommandChannels(char src_drive, char dest_drive) {
     int res = 0;
     // open command channels
@@ -147,7 +151,7 @@ int openReadBufferChannel(char driveid)
     return openBufferChannel(RBHANDLE,5,driveid);
 }
 
-int waitForReadStatus(sstr_t* status_str)
+int getReadRes(sstr_t* status_str)
 {
     int res = 0;
     char *tmp = get_sstr(status_str);
@@ -158,22 +162,6 @@ int waitForReadStatus(sstr_t* status_str)
     res = atoi(tmp);
     if(res >= 20) {
         krnio_close(RBHANDLE);
-        return -1;
-    }
-    return 0;
-}
-
-int waitForWriteStatus(sstr_t* status_str)
-{
-    int res = 0;
-    char *tmp = get_sstr(status_str);
-    // read status
-    krnio_read(WCMDHANDLE,tmp,16);
-    tmp[15] = 0;
-
-    res = atoi(tmp);
-    krnio_close(WBHANDLE);
-    if(res >= 20) {
         return -1;
     }
     return 0;
@@ -194,7 +182,7 @@ int loadSectorToBuffer(char track, char sec, sstr_t* status_str)
         krnio_close(RBHANDLE);
         return -1;
     }
-    return waitForReadStatus(status_str);
+    return getReadRes(status_str);
 }
 
 int readBufferToMem()
@@ -227,24 +215,6 @@ int writeMemToBuffer()
     return 0;
 }
 
-int saveBufferToSector(char track, char sec, sstr_t* status_str)
-{
-    int res = 0;
-    sstr_t tmpstr;
-    // prepare command to move head to sector
-    set_sstr(&tmpstr,"U2 6 0 ");
-    append_sstr_num(&tmpstr,track);
-    append_sstr(&tmpstr," ");
-    append_sstr_num(&tmpstr,sec);
-    char* cmd = get_sstr(&tmpstr);
-    res = krnio_puts(WCMDHANDLE,cmd);
-    krnio_close(WBHANDLE);
-    if(res <= 0) {
-        return -1;
-    }
-    return waitForWriteStatus(status_str);
-}
-
 int readSector(char driveid, char track,  char sec, sstr_t* status_str)
 {
     int res = 0;
@@ -268,11 +238,11 @@ int readSector(char driveid, char track,  char sec, sstr_t* status_str)
             
 }
 
-int writeSector(char driveid, char track,  char sec, sstr_t* status_str)
+int writeSector(char driveid, char track,  char sec,sstr_t* status_str)
 {
   
     int res = 0;
-    
+    char err_code = 0;
     res=openWriteBufferChannel(driveid);
     if(res < 0) {
         return -1;
@@ -283,9 +253,10 @@ int writeSector(char driveid, char track,  char sec, sstr_t* status_str)
         return -1;
     }
 
-    res= fdc_startWriteSector(WCMDHANDLE,track,sec);
+    res= fdc_startWriteSector(WCMDHANDLE,track,sec, &err_code);
     krnio_close(WBHANDLE);
     if(res < 0) {
+        set_sstr(status_str,getErrorMessage(err_code));
         return -1;
     }
 
@@ -293,7 +264,10 @@ int writeSector(char driveid, char track,  char sec, sstr_t* status_str)
 
 }
 
-int waitWriteComplete(){
+int waitWriteResult(sstr_t* status_str){
 
-    return waitCmdExecution(WCMDHANDLE);
+    char err_code = 0;
+    int res =waitCmdExecution(WCMDHANDLE,&err_code);
+    set_sstr(status_str,getErrorMessage(err_code));
+    return res;
 }

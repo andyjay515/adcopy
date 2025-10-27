@@ -29,7 +29,7 @@ int issueCommand(char file_num, char command, char trk, char sec) {
     }   
     return 0;
 }
-int waitCmdExecution(char file_num) {
+int waitCmdExecution(char file_num, char *err_code=NULL) {
     int retry = 2048;
 
     while(retry > 0) {
@@ -47,6 +47,9 @@ int waitCmdExecution(char file_num) {
         } else if (res < 2) {
             break;
         } else {
+            if(err_code) {
+                *err_code = (char)(res & 0x7F);
+            }
             return -1;
         }
     }
@@ -54,82 +57,23 @@ int waitCmdExecution(char file_num) {
     return 0;
 }
 
-int fdc_seek(char filenum, char track,char sec) {
+int fdc_seek(char filenum, char track,char sec, char *err_code) {
     int res = 0;
     res = issueCommand(filenum,FDC_CMD_SEEK,track,sec);
     if(res < 0) {
         return -1;
     }
-    res = waitCmdExecution(filenum);
+    res = waitCmdExecution(filenum,err_code);
     if(res < 0) {
         return -1;
     }
     return 0;
 }
 
-int fdc_readSector(char filenum, char track, char sector) {
-    int res = 0;
-    if(cur_RTRACK != track) {
-        res = fdc_seek(filenum,track);
-        if(res < 0) {
-            return -1;
-        }
-        cur_RTRACK = track;
-    }   
-
-    res = issueCommand(filenum,FDC_CMD_READ,track,sector);
-    if(res < 0) {
-        return -1;
-    }
-    res = waitCmdExecution(filenum);
-    if(res < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-int fdc_writeSector(char filenum, char track, char sector) {
+int fdc_startWriteSector(char filenum, char track, char sector,char *err_code) {
     int res = 0;
     if(cur_WTRACK != track) {
-        res = fdc_seek(filenum,track);
-        if(res < 0) {
-            return -1;
-        }
-        cur_WTRACK = track;
-    }   
-
-    res = issueCommand(filenum,FDC_CMD_WRITE,track,sector);
-    if(res < 0) {
-        return -1;
-    }
-    res = waitCmdExecution(filenum);
-    if(res < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-int fdc_startReadSector(char filenum, char track, char sector) {
-    int res = 0;
-    if(cur_RTRACK != track) {
-        res = fdc_seek(filenum,track);
-        if(res < 0) {
-            return -1;
-        }
-        cur_RTRACK = track;
-    }   
-
-    res = issueCommand(filenum,FDC_CMD_READ,track,sector);
-    if(res < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-int fdc_startWriteSector(char filenum, char track, char sector) {
-    int res = 0;
-    if(cur_WTRACK != track) {
-        res = fdc_seek(filenum,track,sector);
+        res = fdc_seek(filenum,track,sector, err_code);
         if(res < 0) {
             return -1;
         }
