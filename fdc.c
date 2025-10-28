@@ -14,6 +14,8 @@
 char cur_RTRACK = 0;
 char cur_WTRACK = 0;
 
+char lastErrorCode = 0;
+
 int issueCommand(char file_num, char command, char trk, char sec) {
     char params[8]={'M','-','W',PARAMS_ADDR&0xFF,PARAMS_ADDR>>8,0x02,trk,sec};
     int res = krnio_write(file_num,params,sizeof(params));
@@ -29,7 +31,7 @@ int issueCommand(char file_num, char command, char trk, char sec) {
     }   
     return 0;
 }
-int waitCmdExecution(char file_num, char *err_code=NULL) {
+int waitCmdExecution(char file_num) {
     int retry = 2048;
 
     while(retry > 0) {
@@ -47,9 +49,7 @@ int waitCmdExecution(char file_num, char *err_code=NULL) {
         } else if (res < 2) {
             break;
         } else {
-            if(err_code) {
-                *err_code = (char)(res & 0x7F);
-            }
+            lastErrorCode = (char)(res & 0x7F);
             return -1;
         }
     }
@@ -57,23 +57,23 @@ int waitCmdExecution(char file_num, char *err_code=NULL) {
     return 0;
 }
 
-int fdc_seek(char filenum, char track,char sec, char *err_code) {
+int fdc_seek(char filenum, char track,char sec) {
     int res = 0;
     res = issueCommand(filenum,FDC_CMD_SEEK,track,sec);
     if(res < 0) {
         return -1;
     }
-    res = waitCmdExecution(filenum,err_code);
+    res = waitCmdExecution(filenum);
     if(res < 0) {
         return -1;
     }
     return 0;
 }
 
-int fdc_startWriteSector(char filenum, char track, char sector,char *err_code) {
+int fdc_startWriteSector(char filenum, char track, char sector) {
     int res = 0;
     if(cur_WTRACK != track) {
-        res = fdc_seek(filenum,track,sector, err_code);
+        res = fdc_seek(filenum,track,sector);
         if(res < 0) {
             return -1;
         }
@@ -86,3 +86,7 @@ int fdc_startWriteSector(char filenum, char track, char sector,char *err_code) {
     }
     return 0;
 }
+
+char getLastErrorCode() {
+    return lastErrorCode;
+}   

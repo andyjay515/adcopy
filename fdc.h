@@ -1,7 +1,10 @@
 #pragma once
 
-int waitCmdExecution(char file_num,char *err_code);
+int waitCmdExecution(char file_num);
 
-int fdc_seek(char filenum, char track,char sec, char* err_code);
-int fdc_startWriteSector(char filenum, char track, char sector, char* err_code);
+int fdc_seek(char filenum, char track,char sec);
+int fdc_startWriteSector(char filenum, char track, char sector);
+
+char getLastErrorCode();
+
 #pragma compile("fdc.c")

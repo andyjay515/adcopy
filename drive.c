@@ -11,6 +11,8 @@
 
 char buffer[BUFSIZE];
 
+sstr_t status_str;
+
 char error_messages[13][16] = {
     "00,OK",
     "20,READ ERROR",
@@ -151,10 +153,9 @@ int openReadBufferChannel(char driveid)
     return openBufferChannel(RBHANDLE,5,driveid);
 }
 
-int getReadRes(sstr_t* status_str)
-{
+int getReadRes() {
     int res = 0;
-    char *tmp = get_sstr(status_str);
+    char *tmp = get_sstr(&status_str);
     // read status
     krnio_read(RCMDHANDLE,tmp,16);
     tmp[15] = 0;
@@ -167,8 +168,7 @@ int getReadRes(sstr_t* status_str)
     return 0;
 }
 
-int loadSectorToBuffer(char track, char sec, sstr_t* status_str)
-{
+int loadSectorToBuffer(char track, char sec) {
     int res = 0;
     sstr_t tmpstr;
     // prepare command to move head to sector
@@ -182,7 +182,7 @@ int loadSectorToBuffer(char track, char sec, sstr_t* status_str)
         krnio_close(RBHANDLE);
         return -1;
     }
-    return getReadRes(status_str);
+    return getReadRes();
 }
 
 int readBufferToMem()
@@ -215,7 +215,7 @@ int writeMemToBuffer()
     return 0;
 }
 
-int readSector(char driveid, char track,  char sec, sstr_t* status_str)
+int readSector(char driveid, char track,  char sec)
 {
     int res = 0;
 
@@ -224,7 +224,7 @@ int readSector(char driveid, char track,  char sec, sstr_t* status_str)
         return -1;
     }
 
-    res = loadSectorToBuffer(track,sec, status_str);
+    res = loadSectorToBuffer(track,sec);
     if(res < 0) {
         return -1;
     }
@@ -238,7 +238,7 @@ int readSector(char driveid, char track,  char sec, sstr_t* status_str)
             
 }
 
-int writeSector(char driveid, char track,  char sec,sstr_t* status_str)
+int writeSector(char driveid, char track,  char sec)
 {
   
     int res = 0;
@@ -253,10 +253,10 @@ int writeSector(char driveid, char track,  char sec,sstr_t* status_str)
         return -1;
     }
 
-    res= fdc_startWriteSector(WCMDHANDLE,track,sec, &err_code);
+    res= fdc_startWriteSector(WCMDHANDLE,track,sec);
     krnio_close(WBHANDLE);
     if(res < 0) {
-        set_sstr(status_str,getErrorMessage(err_code));
+        set_sstr(&status_str,getErrorMessage(getLastErrorCode()));
         return -1;
     }
 
@@ -264,10 +264,15 @@ int writeSector(char driveid, char track,  char sec,sstr_t* status_str)
 
 }
 
-int waitWriteResult(sstr_t* status_str){
+int waitWriteResult(){
 
     char err_code = 0;
-    int res =waitCmdExecution(WCMDHANDLE,&err_code);
-    set_sstr(status_str,getErrorMessage(err_code));
+    int res =waitCmdExecution(WCMDHANDLE);
+    set_sstr(&status_str,getErrorMessage(getLastErrorCode()));
     return res;
+}
+
+char *getLastErrorMessage()
+{
+    return get_sstr(&status_str);
 }
