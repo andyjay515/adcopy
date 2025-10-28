@@ -7,7 +7,7 @@
 #include "ciatimer.h"
 #include "fdc.h"
 
-#define WELCOME_MSG p"Andy Jay 202510.1"
+#define WELCOME_MSG p"Andy Jay 202511"
 #define BASESCR_ADDR 0x0400
 #define BASECOLOR_ADDR 0xD800
 
