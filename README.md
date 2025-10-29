@@ -34,4 +34,5 @@ Copy type selection
 Copy process 
 
 ![Alt text](images/screen4.png)
+
 Copy process on C128
