@@ -8,11 +8,16 @@ unsigned char* CIA1_TODS = (unsigned char*)(CIA1_REG+0x09);
 unsigned char* CIA1_TODM = (unsigned char*)(CIA1_REG+0x0A);
 unsigned char* CIA1_TODH = (unsigned char*)(CIA1_REG+0x0B);
 
-void getCiaTimer(sstr_t *tmpstr)
+char timerStr[6] = {0x30,0x30,'.',0x30,0x30,0x0};
+
+char* getCiaTOD()
 {
     // read Hour to activate latch
-    unsigned char h = *CIA1_TODH;
-    char timerStr[6] = {0x0,0x0,'.',0x0,0x0,0x0};
+    //unsigned char h = *CIA1_TODH;
+    __asm {
+        lda CIA1_TODH;
+    }
+    
     char ml,mh = 0;
     char sl,sh = 0;
     // convert BCD to binary
@@ -25,10 +30,13 @@ void getCiaTimer(sstr_t *tmpstr)
     timerStr[3] = 0x30+sh;
     timerStr[4] = 0x30+sl;
 
-    set_sstr(tmpstr,timerStr);
-
     // relase latch
-    h = *CIA1_TODH;
+    //h = *CIA1_TODT;
+    __asm {
+        lda CIA1_TODT;
+    }
+
+    return timerStr;
 }
 
 void resetCiaTimer()

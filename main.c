@@ -84,11 +84,9 @@ void drawBox(char x, char y)
     putsxy(x,y+5,r6);   
 }
 
-void printTimer(char ypos)
-{
-    sstr_t tmpstr;
-    getCiaTimer(&tmpstr);
-    putsxy(35,ypos,get_sstr(&tmpstr));
+void printTimer(char ypos){
+
+    putsxy(35,ypos,getCiaTOD());
 }
 
 void resetCPU()

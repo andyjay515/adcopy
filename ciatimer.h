@@ -3,7 +3,7 @@
 #include "sstr.h"
 
 
-void getCiaTimer(sstr_t *tmpstr);
+char* getCiaTOD();
 void resetCiaTimer();
 void stopCiaTimer();
 
