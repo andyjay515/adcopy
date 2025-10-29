@@ -25,9 +25,13 @@ This utility is intended solely for archival and preservation purposes.
 **Do not use it to create unauthorized copies of software you do not own.**
 
 ![Alt text](images/home.png)
+Home screen drive selection
 
 ![Alt text](images/screen2.png)
+Copy type selection
 
 ![Alt text](images/screen3.png)
+Copy process 
 
 ![Alt text](images/screen4.png)
+Copy process on C128
